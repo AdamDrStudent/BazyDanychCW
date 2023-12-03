@@ -1,0 +1,41 @@
+zad 1.
+id_produktu -> nazwa_produktu, cena_produktu, VAT
+nazwa_produktu -> id_produktu, VAT, cena_produktu
+nazwa_klienta -> id_klienta
+id_klienta -> nazwa_klienta
+suma_brutto, VAT -> suma_netto
+suma_netto, VAT -> suma_brutto
+cena_produktu, ilość -> suma_netto
+id_klienta, data_zamowienia -> id_produktu, nazwa_produktu, cena_produktu, ilość
+suma_brutto, id_produktu -> suma_netto
+suma_netto, id_produktu -> suma_brutto
+
+==============================================
+
+zad 2.
+id_produktu, id_klienta, data_zamowienia
+nazwa_produktu, nazwa_klienta, data_zamowienia
+id_produktu, nazwa_klienta, data_zamowienia
+nazwa_produktu, id_klienta, data_zamowienia
+
+==============================================
+
+zad 3.
+zależności funkcyjne:
+id_budynku -> ulica, miasto, kod_pocztowy
+
+id_pomieszczenia -> numer_pomieszczenia, id_budynku, powierzchnia, liczba_okien, liczba_drzwi, ulica, miasto, kod_pocztowy
+
+numer_pomieszczenia, id_budynku -> powierzchnia, liczba_okien, liczba_drzwi, ulica, miasto, kod_pocztowy
+
+ulica, miasto -> id_budynku, kod_pocztowy
+
+numer_pomieszczenia, ulica, miasto -> id_budynku, powierzchnia, liczba_okien, liczba_drzwi, kod_pocztowy
+
+kod_pocztowy -> miasto
+
+-------------------------
+klucze kandydujące:
+id_pomieszczenia
+id_budynku, numer_pomieszczenia
+ulica, miasto, numer_pomieszczenia
