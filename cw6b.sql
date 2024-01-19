@@ -41,7 +41,7 @@ SELECT telefon FROM ksiegowosc.pracownicy
 
 --b
 UPDATE ksiegowosc.pracownicy
-SET telefon = CONCAT(SUBSTR(telefon,1,9),'-',SUBSTR(telefon,10,3),'-',SUBSTR(telefon,13,3))
+SET telefon = CONCAT(SUBSTR(telefon,1,3),'-',SUBSTR(telefon,4,3),'-',SUBSTR(telefon,7,3))
 
 --c
 SELECT UPPER(nazwisko) AS nazwisko FROM ksiegowosc.pracownicy
