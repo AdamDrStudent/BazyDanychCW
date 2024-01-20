@@ -1,0 +1,120 @@
+ZAD 1
+
+Zapytanie, dla którego badam szybkość wykonania:
+
+SELECT SalesOrderID, SalesOrderDetailID
+FROM Sales.SalesOrderDetail
+WHERE SalesOrderID = 43683
+AND SalesOrderDetailID = 240
+
+Wykonanie z kluczem głównym:
+czas wykonania operacji: 0.000s
+koszty operacji I/O: 0,003125
+koszty CPU: 0,0001581
+ilość wierszy, które musiały być wczytane: 1
+
+Wykonała się operacja Clustered Index Seek.
+
+
+Wykonanie bez klucza głównego: 
+czas wykonania operacji: 0.011s
+koszty operacji I/O: 0,918681
+koszty CPU: 0,133606
+ilość wierszy, które musiały być wczytane: 121317
+
+Wykonała się operacja Table Scan.
+
+
+W przypadku wykonania bez klucza głównego można zauważyć, że otrzymane wyniki są znacznie wyższe niż w przypadku pierwszym.
+
+Koszty operacji I/O wzrosły ok. 293,98 razy. a koszty CPU - ok. 845,07 razy.
+
+Można również zauważyć, że w  pierwszym przypadku został odczytany tylko jeden wiersz, a w drugim 121317, a zatem wszystkie wiersze w tabeli.
+
+Jest to związane z tym, że obecność klucza głównego oznaczała również to, że w tabeli istniał indeks klastrowany, a zatem dane w niej były uporządkowane na podstawie klucza głównego, a zatem kolumn SalesOrderID i SalesOrderDetailID.
+Oznacza to, że gdy operacja została wykonana, to narzędzie przeszukujące tabelę dokładnie wiedziało, gdzie znajduje się szukana wartość (wyszukiwanie na podstawie tych właśnie indeksowanych kolumn) oraz, że wyniki te są unikalne.
+
+Po usunięciu klucza głównego (a przy tym i indeksu), w trakcie operacji przeglądania tabeli nie wiadomo czy dane są unikalne, w jakiej kolejności występują - tabela nie ma żadnej sugerującej to właściwości. Oznacza to, że trzeba przejrzeć wszystkie możliwe rekordy, aby zwrócić wynik zapytania.
+
+
+Teraz przeanalizuję zapytanie:
+
+SELECT SalesOrderID, SalesOrderDetailID
+FROM Sales.SalesOrderDetail
+WHERE SalesOrderID = 43683
+OR SalesOrderDetailID = 240
+
+Jest to to samo zapytanie, co poprzednio, ale słowo AND zostało zamienione na OR.
+
+Wykonanie z kluczem głównym:
+czas wykonania operacji: 0.024s
+koszty operacji I/O: 0,206088
+koszty CPU: 0,133606
+ilość wierszy, które musiały być wczytane: 121317
+
+Wykonała się operacja Index Scan (NonClustered)
+
+
+Wykonanie bez klucza głównego:
+Czas wykonania operacji: 0.029s
+koszty operacji I/O: 0,918681
+koszty CPU: 0,133606
+ilość wierszy, które musiały być wczytane: 121317
+
+Wykonałą się operacja Table Scan
+
+
+W tym wypadku istnienie klucza głównego wpłynęło bardzo miminalnie na czas wykonania zapytania. W obu przypadkach odczytane zostały wszystkie rekordy tabeli. W wykonaniu bez klucz głównego otrzymaliśmy większe koszty operacji I/O, natomiast koszty CPU okazały się identyczne.
+
+Indeks klastrowany jest nałożony naraz na obie kolumny SalesOrderID i SalesOrderDetailID, a w powyższym wypadku obecność słowa OR pomiędzy warunkami uwzględniającymi wartości tych kolumn sprawia, że w trakcie wykonywania operacji nie szukamy konkretnej pary wartości (a takie są uporządkowane przy pomocy indeksu klastrowanego), ale tylko jednej z nich.
+
+W przypadku wykonania bez klucza głównego sytuacja jest taka jak w przypadku poprzedniego zapytania - nie wiadomo nic o uporządkowaniu i rozmieszczeniu danych w tabeli, więc trzeba było przeskanować wszystkie rekordy.
+
+====================================================
+
+ZAD 2
+
+Zapytanie, które analizuję:
+
+SELECT UnitPrice
+FROM Sales.SalesOrderDetail
+WHERE UnitPrice > 2000;
+
+
+Kolumna UnitPrice nie ma nałożonego indeksu.
+
+Czas wykonania operacji: 0.012s
+koszty operacji I/O: 0,918681
+koszty CPU: 0,133606
+ilość wierszy, które musiały być wczytane: 121317
+
+
+Teraz nakładam indeks na kolumnę UnitPrice i znów testuję wykonanie:
+
+Czas wykonania operacji: 0.005s
+koszty operacji I/O: 0,0238657
+koszty CPU: 0,0117076
+ilość wierszy, które musiały być wczytane: 10500
+
+
+Widać, że nałożenie indeksu na kolumnę znacznie poprawia szybkość wykonania zapytania.
+
+
+Przetestowałem również działanie zapytania, gdy po słowie SELECT uwzględniam również kolumny, na które indeks nie jest nałożony.
+
+SELECT UnitPrice, UnitPriceDiscount, LineTotal
+FROM Sales.SalesOrderDetail
+WHERE UnitPrice > 2000;
+
+W tym wypadku i wtedy, gdy indeks istnieje, i wtedy gdy nie - przeglądane są wszystkie rekordy w tabeli.
+Czas wykonania z indeksem wynosił 0,010s, a bez niego - 0.017s lub w innej próbie - 0.026s.
+Koszty CPU i operacji I/O w obu wypadkach też były takie same.
+
+Obecność indeksu zatem poprawia szybkość wykonania polecenia, ale znaczniejsze różnice są zauważalne, gdy zwracamy jedynie indeksowane kolumny.
+
+
+=============================================
+OGÓLNE WNIOSKI I INNE OBSERWACJE
+- indeks poprawia szybkość wykonania polecenia, ale znaczna poprawa jest widoczna, gdy zwracamy jedynie indeksowane kolumny
+- koszty operacji I/O oraz koszty CPU są zależne od ilości czytanych wierszy
+- w przypadku, gdy na kolumnę był nałożony indeks, czas wykonania zapytania zazwyczaj wynosił tyle samo przy każdej próbie; gdy indeksu nie było - czas się bardziej wahał
